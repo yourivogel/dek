@@ -1,0 +1,33 @@
+<html>
+    <head>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+
+    </head>
+    <body>
+        <form action="" method="return false">
+            <input type="text" id="answer" name="answer" placeholder="your anser!!"><br>
+            <button id="buttoncheck" type="button" onclick="Check()">check</button>
+        </form>
+    </body>
+    <script>
+    const socket = io.connect('http://localhost:3000')
+var buttonvalue = document.getElementById("buttoncheck");
+    function Check(){
+        console.log("test");
+        const answer = document.getElementById("answer").value;
+        socket.emit('check', answer);
+        if (buttonvalue.innerHTML == 'check'){    
+            buttonvalue.innerHTML = "volgende vraag";
+        } else {
+            buttonvalue.innerHTML = "check";
+        }
+    }
+    
+
+    
+    
+    
+    
+    </script>
+</html>
