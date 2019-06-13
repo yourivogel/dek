@@ -7,6 +7,7 @@ var vragenlijst = fs.readFileSync("vragen.json");
 var jsonVragen = JSON.parse(vragenlijst);
 var mysql = require('mysql');
 let connection = mysql.createConnection(connectionData);
+var sqlselect= "SELECT * FROM vragen";
 
 
 app.get('/', function(req, res){
@@ -20,10 +21,11 @@ connection.connect(function (err) {
     console.log('Connected to the MySQL server.');
     
     if (err) throw err;
-    var sqlselect= "SELECT * FROM vragen";
+    
     connection.query(sqlselect, function (err, result, fields) {
       if (err) throw err;
       console.log(result);
+      
     });
   });
 
