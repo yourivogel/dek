@@ -18,9 +18,16 @@ connection.connect(function (err) {
       return console.error('error: ' + err.message);
     }
     console.log('Connected to the MySQL server.');
+    
+    if (err) throw err;
+    var sqlselect= "SELECT * FROM vragen";
+    connection.query(sqlselect, function (err, result, fields) {
+      if (err) throw err;
+      console.log(result);
+    });
   });
 
-socket.on('connection', function(socket){
+ socket.on('connection', function(socket){
     console.log('a user connected');
     socket.on('loginValue', function(user) {
        console.log('user', user);
