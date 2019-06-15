@@ -9,11 +9,24 @@
         </script>
 
         <script>
+            render = {
+                exercise: function ( id ) {
+                    let context = $( '#exercise' ).get()[0];
+                    $( '.collection-item', context ).removeClass( 'active' );
+                    $( '[data-exercise=' + ( id ) + ']', context ).addClass( 'active' );
+                },
+                question: function ( question ) {
+                    console.log(question);
+                    let context = $( '#question' ).get()[0];
+                    $( '.collection-header h4', context ).html( question.vraag );
+                },
+            };
+
             let requests = {
                 exercise: function ( id ) {
                     socket.emit( 'exercise', { id }, data => {
-                        $( '#exercises .collection-item').children().removeClass( 'active' );
-                        $( '#exercises [data-exercise=' + (id) + ']' ).addClass( 'active' );
+                        render.exercise( id );
+                        render.question( data.question );
                         console.log( data );
                     });
                 },
@@ -32,7 +45,10 @@
                             );
                         }
                     });
+                });
 
+                socket.on( 'disconnect', () => {
+                    $( '#exercises .collection-item').remove();
                 });
             });
         </script>
@@ -52,6 +68,19 @@
                 <div class="col s12 m4 l2">
                     <div id="exercises" class="collection with-header">
                         <div class="collection-header"><h5>Choose an exercise</h5></div>
+                    </div>
+                </div>
+                <div class="col s12 m8 l6">
+                    <div id="question" class="collection with-header">
+                        <div class="collection-header"><h4>What is the meaning of life? __</h4></div>
+                        <div id="answer">
+                            <input type="text" value="">
+                            <div class="btn right">Submit</div>
+                            <!-- <a class="collection-item">a) 42</a> -->
+                            <!-- <a class="collection-item">b) 42</a> -->
+                            <!-- <a class="collection-item">c) 42</a> -->
+                            <!-- <a class="collection-item">d) 42</a> -->
+                        </div>
                     </div>
                 </div>
             </div>

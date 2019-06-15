@@ -10,9 +10,10 @@ let connection = mysql.createConnection(connectionData);
 
 let queries = {
 	exercises: 'SELECT * FROM `opdrachten`',
-	exercise: 'SELECT * FROM `vragen` WHERE `opdracht_id` = :opdracht_id',
+	exercise: 'SELECT * FROM `vragen` WHERE `opdracht_id` = ? ORDER BY RAND()',
 };
 
+let clients = [];
 
 app.get( '/' , function(req, res){
     res.sendFile( __dirname + '/index.html' );
@@ -25,25 +26,37 @@ connection.connect( function ( err ) {
     console.log( 'Connected to the MySQL server.' );
 });
 
- socket.on( 'connection', function( socket ){
-    console.log( 'a client has connected' );
+ socket.on( 'connection', function( socket ) {
+	clients[socket.id] = { socket };
+    console.log( 'a client has connected with id: ' + socket.id );
 
     socket.on( 'disconnect', function () {
-        console.log( 'a client has disconnected' );
+		console.log( 'a client has disconnected with id: ' + socket.id );
+		delete clients[socket.id];
 	})
 	
+	// request all exercises
 	socket.on( 'exercises', ( data, fn ) => {
-		console.log(1);
 		connection.query( queries.exercises, function ( err, result, fields ) {
 		  	if ( err ) throw err;
 		  	fn( result );
 		});
 	});
 
+	// request initiate questions from exercise
 	socket.on( 'exercise', ( data, fn ) => {
-		connection.query( queries.exercise, { 'opdracht_id': data.id },  function ( err, result, fields ) {
+		connection.query( queries.exercise, [ data.id ],  function ( err, result, fields ) {
 			if ( err ) throw err;
-			fn( result );
+			let c = clients[socket.id];
+			c.exercise = data.id;
+			c.progress = { current: 0, total: result.length };
+			c.questions = result;
+			fn({ 
+				question: c.questions[c.progress.current], 
+				progress: c.progress,
+			});
+			console.log( socket.id + ' has selected exercise: ' + c.exercise );
+			console.log( 'Sent question ' + (c.progress.current + 1) + ' out of ' + c.progress.total + ' to ' + socket.id + ' from exercise ' + c.exercise );
 		});
 	});
 });
