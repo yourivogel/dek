@@ -20,39 +20,47 @@
 
                         for (let exercise of data.exercises) {
                             if ( exercise.level_id == level.id ) {
-                                e += '<a class="collection-item" onclick="requests.exercise( this.dataset.exercise )" data-exercise="' + (exercise.id) + '">' + (exercise.name) + '</a>';
+                                e += '<a class="collection-item" onclick="requests.exercise( this )" data-exercise="' + (exercise.id) + '">' + (exercise.name) + '</a>';
                             }
                         }
 
-                        e += '</div></li>'
+                        e += '</div></li>';
 
                         $( '.collapsible', context).append( e );
                     }
                 },
-                question: function ( question ) {
-                    console.log(question);
-                    let context = $( '#question' ).get()[0];
-                    $( '.collection-header h4', context ).html( question.vraag );
-                    console.log(question.type);
-                    switch (question.type) {
-                        case 0:
-                            $( '#answer', context ).html( 
-                                `<input type="text" value="">
-                                <div class="btn right">Submit</div>` 
-                            );
-                            break;
-                        case 1:
+                currentExercise: function ( e ) {
+                    let context = $( '#exercises' ).get()[0];
 
-                            break;
+                    $( '.collection-item', context ).removeClass( 'active' );
+                    $( e ).addClass( 'active' );
+                },
+                question: function ( data ) {
+                    let context = $( '#question' ).get()[0];
+
+                    $( '.collection-header h4', context ).html( data.question );
+
+                    if ( typeof data.answers == 'undefined' ) {
+                        $( '#answer', context ).html( 
+                            `<input type="text" value="">
+                            <div class="btn right">Submit</div>` 
+                        );
+                    } else {
+                        let e = '';
+
+                        for (let i in data.answers) {
+                            e += '<a class="collection-item">' + ( +i + 1 ) + ') ' + ( data.answers[i].answer ) + '</a>';
+                        }
+
+                        $( '#answer', context ).html( e );
                     }
                 },
             };
 
             let requests = {
-                exercise: function ( id ) {
-                    socket.emit( 'exercise', { id }, data => {
-                        console.log( data );
-                    });
+                exercise: function ( e ) {
+                    render.currentExercise( e );
+                    socket.emit( 'exercise', { id: e.dataset.exercise } );
                 },
             };
 
@@ -61,16 +69,21 @@
 
                 socket = io( 'http://localhost:3000' );
             
-                socket.on( 'connect' , () => {
+                socket.once( 'connect' , () => {
                     exercise = null;
 
-                    socket.emit( 'exercises', {}, ( data ) => {
+                    socket.emit( 'exercises', {}, function ( data ) {
                         render.exercises( data );
+                        let context = $( '#exercises' ).get()[0];
+                    });
+
+                    socket.on( 'question', ( data ) => {
+                        render.question( data );
                     });
                 });
 
                 socket.on( 'disconnect', () => {
-                    $( '#exercises .collapsible').children().remove();
+                    window.location.reload();
                 });
             });
         </script>
@@ -94,12 +107,6 @@
                     <div id="question" class="collection with-header">
                         <div class="collection-header"><h4>What is the meaning of life? __</h4></div>
                         <div id="answer">
-                            <!-- <input type="text" value=""> -->
-                            <!-- <div class="btn right">Submit</div> -->
-                            <!-- <a class="collection-item">a) 42</a> -->
-                            <!-- <a class="collection-item">b) 42</a> -->
-                            <!-- <a class="collection-item">c) 42</a> -->
-                            <!-- <a class="collection-item">d) 42</a> -->
                         </div>
                     </div>
                 </div>
