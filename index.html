@@ -1,33 +1,60 @@
 <html>
-    <head>
-        
+    <head>   
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+        <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous">
+        </script>
 
+        <script>
+            let requests = {
+                exercise: function ( id ) {
+                    socket.emit( 'exercise', { id }, data => {
+                        $( '#exercises .collection-item').children().removeClass( 'active' );
+                        $( '#exercises [data-exercise=' + (id) + ']' ).addClass( 'active' );
+                        console.log( data );
+                    });
+                },
+            };
+
+            $( function () {
+                socket = io( 'http://localhost:3000' );
+            
+                socket.on( 'connect' , () => {
+                    exercise = null;
+
+                    socket.emit( 'exercises', {}, data => {
+                        for (v of data) {
+                            $( '#exercises' ).append( 
+                                '<a class="collection-item waves-effect" onclick="requests.exercise(this.dataset.exercise)" data-exercise="' + (v.id) + '">' + (v.naam + ' level ' + v.niveau) + '</a>' 
+                            );
+                        }
+                    });
+
+                });
+            });
+        </script>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+        <style>
+            .container {
+                width: 100%;
+                max-width:initial;
+            }
+        </style>
     </head>
     <body>
-        <form action="" method="return false">
-            <input type="text" id="answer" name="answer" placeholder="your anser!!"><br>
-            <button id="buttoncheck" type="button" onclick="Check()">check</button>
-        </form>
+        <div class="container">
+            <div class="row">
+                <div class="col s12 m4 l2">
+                    <div id="exercises" class="collection with-header">
+                        <div class="collection-header"><h5>Choose an exercise</h5></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
-    <script>
-    const socket = io.connect('http://localhost:3000')
-var buttonvalue = document.getElementById("buttoncheck");
-    function Check(){
-        console.log("test");
-        const answer = document.getElementById("answer").value;
-        socket.emit('check', answer);
-        if (buttonvalue.innerHTML == 'check'){    
-            buttonvalue.innerHTML = "volgende vraag";
-        } else {
-            buttonvalue.innerHTML = "check";
-        }
-    }
-    
-
-    
-    
-    
-    
-    </script>
 </html>

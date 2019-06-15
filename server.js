@@ -1,50 +1,54 @@
 const connectionData = require('./connection.js');
-var app = require('express')();
-var http = require('http').createServer(app);
-var socket = require('socket.io')(http);
-var fs = require('fs');
-var vragenlijst = fs.readFileSync("vragen.json");
-var jsonVragen = JSON.parse(vragenlijst);
-var mysql = require('mysql');
+let app = require('express')();
+let http = require('http').createServer(app);
+let socket = require('socket.io')(http);
+let fs = require('fs');
+let vragenlijst = fs.readFileSync("vragen.json");
+let jsonVragen = JSON.parse(vragenlijst);
+let mysql = require('mysql');
 let connection = mysql.createConnection(connectionData);
-var sqlselect= "SELECT * FROM vragen";
+
+let queries = {
+	exercises: 'SELECT * FROM `opdrachten`',
+	exercise: 'SELECT * FROM `vragen` WHERE `opdracht_id` = :opdracht_id',
+};
 
 
-app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
+app.get( '/' , function(req, res){
+    res.sendFile( __dirname + '/index.html' );
 });
 
-connection.connect(function (err) {
-    if (err) {
-      return console.error('error: ' + err.message);
+connection.connect( function ( err ) {
+    if ( err ) {
+      return console.error( 'error: ' + err.message );
     }
-    console.log('Connected to the MySQL server.');
-    
-    if (err) throw err;
-    
-    connection.query(sqlselect, function (err, result, fields) {
-      if (err) throw err;
-      console.log(result);
-      
-    });
-  });
-
- socket.on('connection', function(socket){
-    console.log('a user connected');
-    socket.on('loginValue', function(user) {
-       console.log('user', user);
-       socket.userName = user;
-    });
-    socket.on('disconnect', function () {
-        console.log('log-out: ' + socket.userName)
-    })
-    socket.on('check', function(answer){
-        console.log(answer);
-     
-     })
+    console.log( 'Connected to the MySQL server.' );
 });
 
-http.listen(3000, function(){
-    console.log('listening on *:3000');
+ socket.on( 'connection', function( socket ){
+    console.log( 'a client has connected' );
+
+    socket.on( 'disconnect', function () {
+        console.log( 'a client has disconnected' );
+	})
+	
+	socket.on( 'exercises', ( data, fn ) => {
+		console.log(1);
+		connection.query( queries.exercises, function ( err, result, fields ) {
+		  	if ( err ) throw err;
+		  	fn( result );
+		});
+	});
+
+	socket.on( 'exercise', ( data, fn ) => {
+		connection.query( queries.exercise, { 'opdracht_id': data.id },  function ( err, result, fields ) {
+			if ( err ) throw err;
+			fn( result );
+		});
+	});
+});
+
+http.listen( 3000, function() {
+    console.log( 'listening on *:3000' );
 });
 
