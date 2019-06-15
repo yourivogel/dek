@@ -9,8 +9,9 @@ let mysql = require('mysql');
 let connection = mysql.createConnection(connectionData);
 
 let queries = {
-	exercises: 'SELECT * FROM `opdrachten`',
-	exercise: 'SELECT * FROM `vragen` WHERE `opdracht_id` = ? ORDER BY RAND()',
+	levels: 'SELECT * FROM `levels`',
+	exercises: 'SELECT * FROM `exercises`',
+	exercise: 'SELECT * FROM `questions` WHERE `exercise_id` = ? ORDER BY RAND()',
 };
 
 let clients = [];
@@ -37,9 +38,16 @@ connection.connect( function ( err ) {
 	
 	// request all exercises
 	socket.on( 'exercises', ( data, fn ) => {
-		connection.query( queries.exercises, function ( err, result, fields ) {
+		connection.query( queries.levels, function ( err, result, fields ) {
 		  	if ( err ) throw err;
-		  	fn( result );
+			let data = { levels: result };
+
+			connection.query( queries.exercises, function ( err, result, fields ) {
+				if ( err ) throw err;
+				data.exercises = result;
+				fn( data );
+				console.log( socket.id + ' has requested all exercises');
+			});
 		});
 	});
 
@@ -47,16 +55,6 @@ connection.connect( function ( err ) {
 	socket.on( 'exercise', ( data, fn ) => {
 		connection.query( queries.exercise, [ data.id ],  function ( err, result, fields ) {
 			if ( err ) throw err;
-			let c = clients[socket.id];
-			c.exercise = data.id;
-			c.progress = { current: 0, total: result.length };
-			c.questions = result;
-			fn({ 
-				question: c.questions[c.progress.current], 
-				progress: c.progress,
-			});
-			console.log( socket.id + ' has selected exercise: ' + c.exercise );
-			console.log( 'Sent question ' + (c.progress.current + 1) + ' out of ' + c.progress.total + ' to ' + socket.id + ' from exercise ' + c.exercise );
 		});
 	});
 });
