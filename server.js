@@ -7,7 +7,8 @@ var vragenlijst = fs.readFileSync("vragen.json");
 var jsonVragen = JSON.parse(vragenlijst);
 var mysql = require('mysql');
 let connection = mysql.createConnection(connectionData);
-var sqlselect= "SELECT * FROM vragen";
+var sqlselect= "SELECT vraag FROM vragen WHERE id = 1";
+var sqlantwoordselect = "SELECT antwoord FROM vragen WHERE id = 1"
 
 
 app.get('/', function(req, res){
@@ -27,6 +28,11 @@ connection.connect(function (err) {
       console.log(result);
       
     });
+
+    connection.query(sqlantwoordselect, function(err, result, fields){
+      if (err) throw err;
+      console.log(result);
+    })
   });
 
  socket.on('connection', function(socket){
