@@ -11,8 +11,9 @@ let connection = mysql.createConnection( connectionData );
 let queries = {
 	levels: 'SELECT * FROM `levels`',
 	exercises: 'SELECT * FROM `exercises`',
-	exercise: 'SELECT * FROM `questions` WHERE `exercise_id` = ? ORDER BY RAND( )',
-	question: 'SELECT `id`, `answer` FROM `answers` WHERE `question_id` = ?',
+	exercise: 'SELECT * FROM `questions` WHERE `exercise_id` = ? ORDER BY RAND()',
+	question: 'SELECT `id`, `answer` FROM `answers` WHERE `question_id` = ? ORDER BY RAND()',
+	answer: 'SELECT `id`, `answer`, `correct` FROM `answers` WHERE `question_id` = ?',
 };
 
 var clients = [];
@@ -37,20 +38,23 @@ let responses = {
 			[ c.exercise.questions[c.exercise.progress.current].id ]
 			,  function ( err, result, fields ) {
 			if ( err ) throw err;
-
+	
 			if ( result.length > 1 ) {
 				socket.emit( 'question', { question: c.exercise.questions[c.exercise.progress.current].question, answers: result} );
 			} else {
 				socket.emit( 'question', { question: c.exercise.questions[c.exercise.progress.current].question } );
 			}
 		} );
-
+	
 		console.log( socket.id + ' will receive answers for question: ' + c.exercise.questions[c.exercise.progress.current].id );
 	},
-	progress: function ( socket) {
+	progress: function ( socket ) {
 		let c = clients[socket.id];
 
 		socket.emit( 'progress', c.exercise.progress );
+	},
+	finished: function () {
+		socket.emit( 'finished' );
 	},
 };
 
@@ -101,9 +105,72 @@ socket.on( 'connection', function( socket ) {
 				},
 			};
 
-			responses.question( socket );
 			responses.progress( socket );
+
+			fn();
 		} ) ;
+	} );
+
+	// request question
+	socket.on( 'question', ( data, fn ) => {
+		let c = clients[socket.id];
+
+		if ( c.exercise.progress.current < c.exercise.progress.total ) {
+			responses.question( socket );
+		}
+	} );
+
+	// request process answer
+	socket.on( 'answer', ( data, fn ) => {
+		let c = clients[socket.id];
+
+		if ( c.exercise.progress.current < c.exercise.progress.total ) {
+			connection.query( queries.answer, [ c.exercise.questions[c.exercise.progress.current].id ], function ( err, result, fields ) {
+				if ( err ) throw err;
+
+				// open question
+				if ( result.length === 1 ) {
+					c.exercise.progress.current += 1;
+
+					if ( result[0].answer.toLowerCase() === data.answer.toLowerCase() ) {
+						console.log( 'correct' );
+					} else {
+						console.log( 'incorrect' );
+						c.exercise.progress.incorrect += 1;
+					}
+
+					fn( result );
+				} 
+				
+				// mutliple choice question
+				if ( result.length > 1 ) {
+					let correct = false;
+
+					c.exercise.progress.current += 1;
+
+					for (let answer of result ) {
+						if ( answer.id == data.answer ) {
+							if ( answer.correct ) correct = true;
+						}
+					}
+
+					if ( correct ) {
+						console.log( 'correct' );
+					} else {
+						console.log( 'incorrect' );
+						c.exercise.progress.incorrect += 1;
+					}
+
+					fn( result );
+				}
+
+				if ( c.exercise.progress.current == c.exercise.progress.total ) {
+					responses.finished( socket);
+				}
+
+				responses.progress( socket );
+			} );
+		}
 	} );
 } );
 

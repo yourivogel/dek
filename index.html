@@ -15,18 +15,18 @@
                 exercises: function ( data ) {
                     let context = $( '#exercises' ).get()[0];
 
-                    for (let level of data.levels) {
-                        let e = '<li><div class="collapsible-header">' + (level.name) +  '</div><div class="collapsible-body collection">';
+                    for ( let level of data.levels ) {
+                        let e = '<li><div class="collapsible-header">' + ( level.name ) +  '</div><div class="collapsible-body collection">';
 
-                        for (let exercise of data.exercises) {
+                        for ( let exercise of data.exercises ) {
                             if ( exercise.level_id == level.id ) {
-                                e += '<a class="collection-item" onclick="requests.exercise( this )" data-exercise="' + (exercise.id) + '">' + (exercise.name) + '</a>';
+                                e += '<a class="collection-item" onclick="requests.exercise( this )" data-exercise="' + ( exercise.id ) + '">' + ( exercise.name ) + '</a>';
                             }
                         }
 
                         e += '</div></li>';
 
-                        $( '.collapsible', context).append( e );
+                        $( '.collapsible', context ).append( e );
                     }
                 },
                 currentExercise: function ( e ) {
@@ -42,14 +42,27 @@
 
                     if ( typeof data.answers == 'undefined' ) {
                         $( '#answer', context ).html( 
-                            `<input type="text" value="">
-                            <div class="btn right">Submit</div>` 
+                            `<input name="answer" class="" type="text" value="">
+                            <div id="submit-answer" class="btn right" 
+                                onclick="
+                                    requests.answer( $( this ).parent().children( \'input[name=&quot;answer&quot;]\' ).val() );
+                                "
+                            >Submit</div>` 
                         );
+
+                        $( 'input[name="answer"]', context ).focus();
                     } else {
                         let e = '';
 
-                        for (let i in data.answers) {
-                            e += '<a class="collection-item">' + ( +i + 1 ) + ') ' + ( data.answers[i].answer ) + '</a>';
+                        for ( let i in data.answers) {
+                            e += 
+                                `<a class="collection-item" 
+                                    onclick="
+                                        requests.answer( this.dataset.answer );
+                                        $( this ).addClass( \'red white-text\' );
+                                    "
+                                    data-answer="` + ( data.answers[i].id ) + `"
+                                >` + ( +i + 1 ) + ` ) ` + ( data.answers[i].answer ) + `</a>`;
                         }
 
                         $( '#answer', context ).html( e );
@@ -62,18 +75,61 @@
                     $( '#correct', context ).html( ( data.current - +data.incorrect ) + ' out of ' + ( data.current ) + ' correct' );
                     $( '#incorrect', context ).html( ( +data.incorrect ) + ' out of ' + ( data.current ) + ' incorrect' );
                     $( '.determinate', context ).css( { width: ( data.current * 100 / data.total ) + '%' } );
-                }
+                },
+                answerOpen: function ( data ) {
+                    let context = $( '#answer' ).get()[0];
+                    let answer = $( 'input[name="answer"]', context );
+
+                    if ( data[0].answer == answer.val() ) {
+                        answer.addClass( 'valid' );
+                    } else {
+                        answer.addClass( 'invalid' );
+                        $( context ).prepend( '<h4 class="green-text">' + ( data[0].answer ) + '</h4>' );
+                    }
+
+                    $( '#submit-answer', context ).addClass( 'disabled' );
+                    $( '#next-question' ).removeClass( 'disabled' );
+                },
+                answerMultiple: function ( data ) {
+                    let context = $( '#answer' ).get()[0];
+
+                    for (let answer of data) {
+                        if ( answer.correct == 1 ) {
+                            $( '.collection-item[data-answer="' + ( answer.id ) + '"]' ).addClass( 'green white-text' );
+                        }
+                    }
+
+                    $( '#next-question' ).removeClass( 'disabled' );
+                },
             };
 
             let requests = {
                 exercise: function ( e ) {
                     render.currentExercise( e );
-                    socket.emit( 'exercise', { id: e.dataset.exercise } );
+                    
+                    socket.emit( 'exercise', { id: e.dataset.exercise }, () => {
+                        requests.question();
+                    } );
                 },
+                answer: function ( answer ) {
+                    socket.emit( 'answer', { answer }, ( data ) => {
+                        if ( data.length === 1 ) {
+                            render.answerOpen( data );
+                        }
+
+                        if ( data.length >1 ) {
+                            render.answerMultiple( data );
+                        }
+                    } );
+                },
+                question: function () {
+                    socket.emit( 'question' );
+                    $( '#next-question' ).addClass( 'disabled' );
+                }
             };
 
             $( function () {
-                $('.collapsible').collapsible();
+                $( '.collapsible' ).collapsible();
 
                 socket = io( 'http://localhost:3000' );
             
@@ -82,7 +138,6 @@
 
                     socket.emit( 'exercises', {}, ( data ) => {
                         render.exercises( data );
-                        let context = $( '#exercises' ).get()[0];
                     } );
 
                     socket.on( 'question', ( data ) => {
@@ -92,6 +147,10 @@
                     socket.on( 'progress', ( data ) => {
                         render.progress( data );
                     } ) ;
+
+                    socket.on( 'finished', () => {
+                        $( '#next-question' ).addClass( 'disabled' );
+                    } );
                 } );
 
                 socket.on( 'disconnect', () => {
@@ -117,9 +176,9 @@
                 </div>
                 <div class="col s12 m8 l6">
                     <div id="question" class="collection with-header">
-                        <div class="collection-header"><h4>What is the meaning of life? __</h4></div>
-                        <div id="answer">
-                        </div>
+                        <div class="collection-header"><h4></h4></div>
+                        <div id="answer"></div>
+                        <div id="next-question" class="btn right disabled" onclick="requests.question();">Next question</div>
                     </div>
                 </div>
                 <div class="col s12 m12 l4">
