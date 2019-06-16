@@ -42,7 +42,7 @@
 
                     if ( typeof data.answers == 'undefined' ) {
                         $( '#answer', context ).html( 
-                            `<input name="answer" class="" type="text" value="">
+                            `<input name="answer" class="" type="text" value="" onkeypress="if (event.keyCode == 13) requests.answer( $( this ).val() );">
                             <div id="submit-answer" class="btn right" 
                                 onclick="
                                     requests.answer( $( this ).parent().children( \'input[name=&quot;answer&quot;]\' ).val() );
@@ -88,6 +88,7 @@
                     }
 
                     $( '#submit-answer', context ).addClass( 'disabled' );
+                    answer.attr( { 'disabled': 'true' } );
                     $( '#next-question' ).removeClass( 'disabled' );
                 },
                 answerMultiple: function ( data ) {
@@ -130,6 +131,7 @@
 
             $( function () {
                 $( '.collapsible' ).collapsible();
+                $('.modal').modal();
 
                 socket = io( 'http://localhost:3000' );
             
@@ -150,6 +152,7 @@
 
                     socket.on( 'finished', () => {
                         $( '#next-question' ).addClass( 'disabled' );
+                        M.Modal.getInstance( $( '#modal-finished' ).get()[0] ).open()
                     } );
                 } );
 
@@ -174,14 +177,14 @@
                         <ul class="collapsible"></ul>
                     </div>
                 </div>
-                <div class="col s12 m8 l6">
+                <div class="col s12 m8 l7">
                     <div id="question" class="collection with-header">
                         <div class="collection-header"><h4></h4></div>
                         <div id="answer"></div>
                         <div id="next-question" class="btn right disabled" onclick="requests.question();">Next question</div>
                     </div>
                 </div>
-                <div class="col s12 m12 l4">
+                <div class="col s12 m12 l3">
                     <div id="progress" class="collection with-header">
                         <div class="collection-header">
                             <h5>Progress</h5>
@@ -194,6 +197,16 @@
                         <div id="incorrect" class="collection-item red-text">0 out of 0 incorrect</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="modal-finished" class="modal">
+            <div class="modal-content">
+                <h4>You have finished your exercise!</h4>
+                <p>Please choose the next one</p>
+            </div>
+            <div class="modal-footer">
+                <btn class="modal-close waves-effect waves-green btn-flat">Ok</btn>
             </div>
         </div>
     </body>
