@@ -55,6 +55,14 @@
                         $( '#answer', context ).html( e );
                     }
                 },
+                progress: function ( data ) {
+                    let context = $( '#progress' ).get()[0];
+
+                    $( '#completed', context ).html( ( data.current ) + ' out of ' + ( data.total ) + ' completed' );
+                    $( '#correct', context ).html( ( data.current - +data.incorrect ) + ' out of ' + ( data.current ) + ' correct' );
+                    $( '#incorrect', context ).html( ( +data.incorrect ) + ' out of ' + ( data.current ) + ' incorrect' );
+                    $( '.determinate', context ).css( { width: ( data.current * 100 / data.total ) + '%' } );
+                }
             };
 
             let requests = {
@@ -72,20 +80,24 @@
                 socket.once( 'connect' , () => {
                     exercise = null;
 
-                    socket.emit( 'exercises', {}, function ( data ) {
+                    socket.emit( 'exercises', {}, ( data ) => {
                         render.exercises( data );
                         let context = $( '#exercises' ).get()[0];
-                    });
+                    } );
 
                     socket.on( 'question', ( data ) => {
                         render.question( data );
-                    });
-                });
+                    } );
+
+                    socket.on( 'progress', ( data ) => {
+                        render.progress( data );
+                    } ) ;
+                } );
 
                 socket.on( 'disconnect', () => {
                     window.location.reload();
-                });
-            });
+                } );
+            } );
         </script>
 
         <style>
@@ -115,12 +127,12 @@
                         <div class="collection-header">
                             <h5>Progress</h5>
                             <div class="progress">
-                                <div class="determinate" style="width: 70%"></div>
+                                <div class="determinate" style="width: 0%"></div>
                             </div>
                         </div>
-                        <div id="completed" class="collection-item">1 out of 3 completed</div>
-                        <div id="correct" class="collection-item green-text">2 out of 3 correct</div>
-                        <div id="incorrect" class="collection-item red-text">1 out of 3 incorrect</div>
+                        <div id="completed" class="collection-item">0 out of 0 completed</div>
+                        <div id="correct" class="collection-item green-text">0 out of 0 correct</div>
+                        <div id="incorrect" class="collection-item red-text">0 out of 0 incorrect</div>
                     </div>
                 </div>
             </div>

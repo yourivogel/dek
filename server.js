@@ -44,6 +44,13 @@ let responses = {
 				socket.emit( 'question', { question: c.exercise.questions[c.exercise.progress.current].question } );
 			}
 		} );
+
+		console.log( socket.id + ' will receive answers for question: ' + c.exercise.questions[c.exercise.progress.current].id );
+	},
+	progress: function ( socket) {
+		let c = clients[socket.id];
+
+		socket.emit( 'progress', c.exercise.progress );
 	},
 };
 
@@ -94,9 +101,8 @@ socket.on( 'connection', function( socket ) {
 				},
 			};
 
-			console.log(c.exercise);
-
 			responses.question( socket );
+			responses.progress( socket );
 		} ) ;
 	} );
 } );
