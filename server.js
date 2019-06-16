@@ -1,3 +1,4 @@
+const process = require('process');
 const connectionData = require( './connection.js' );
 let app = require( 'express' )( );
 let http = require( 'http' ).createServer( app );
@@ -18,6 +19,10 @@ let queries = {
 
 var clients = [];
 
+process.on( 'uncaughtException', function ( err ) {
+	console.log( 'Caught exception: ', err );
+} );
+
 app.get( '/' , function( req, res ){
     res.sendFile( __dirname + '/index.html' );
 } );
@@ -26,8 +31,6 @@ connection.connect( function ( err ) {
     if ( err ) {
       return console.error( 'error: ' + err.message );
 	}
-	
-    console.log( 'Connected to the MySQL server.' );
 } );
 
 let responses = {
@@ -45,8 +48,6 @@ let responses = {
 				socket.emit( 'question', { question: c.exercise.questions[c.exercise.progress.current].question } );
 			}
 		} );
-	
-		console.log( socket.id + ' will receive answers for question: ' + c.exercise.questions[c.exercise.progress.current].id );
 	},
 	progress: function ( socket ) {
 		let c = clients[socket.id];
@@ -82,8 +83,6 @@ socket.on( 'connection', function( socket ) {
 				data.exercises = result;
 
 				fn( data );
-
-				console.log( socket.id + ' has requested all exercises' );
 			} );
 		} );
 	} );
@@ -133,9 +132,8 @@ socket.on( 'connection', function( socket ) {
 					c.exercise.progress.current += 1;
 
 					if ( result[0].answer.toLowerCase() === data.answer.toLowerCase() ) {
-						console.log( 'correct' );
+						// correct
 					} else {
-						console.log( 'incorrect' );
 						c.exercise.progress.incorrect += 1;
 					}
 
@@ -155,9 +153,8 @@ socket.on( 'connection', function( socket ) {
 					}
 
 					if ( correct ) {
-						console.log( 'correct' );
+						// correct
 					} else {
-						console.log( 'incorrect' );
 						c.exercise.progress.incorrect += 1;
 					}
 

@@ -20,7 +20,10 @@
 
                         for ( let exercise of data.exercises ) {
                             if ( exercise.level_id == level.id ) {
-                                e += '<a class="collection-item" onclick="requests.exercise( this )" data-exercise="' + ( exercise.id ) + '">' + ( exercise.name ) + '</a>';
+                                e += `<a class="collection-item" 
+                                        onclick="requests.exercise( this )" 
+                                        data-exercise="` + ( exercise.id ) + `"
+                                    >` + ( exercise.name ) + `</a>`;
                             }
                         }
 
@@ -60,6 +63,7 @@
                                     onclick="
                                         requests.answer( this.dataset.answer );
                                         $( this ).addClass( \'red white-text\' );
+                                        $( '.collection-item', '#question' ).removeAttr( 'onclick' );
                                     "
                                     data-answer="` + ( data.answers[i].id ) + `"
                                 >` + ( +i + 1 ) + ` ) ` + ( data.answers[i].answer ) + `</a>`;
