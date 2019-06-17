@@ -1,0 +1,29 @@
+{
+  "name": "dek",
+  "version": "1.0.0",
+  "description": "",
+  "main": "connection.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "global": "^4.4.0",
+    "http": "^0.0.0",
+    "mysql": "^2.17.1",
+    "node": "^12.4.0",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourivogel/dek.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yourivogel/dek/issues"
+  },
+  "homepage": "https://github.com/yourivogel/dek#readme"
+}
